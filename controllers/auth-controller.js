@@ -31,7 +31,7 @@ const signin = async (req, res) => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
-    throw HttpError(401);
+    throw HttpError(401, 'Email or password is wrong');
   }
 
   const passwordCompare = await bcrypt.compare(password, user.password);
@@ -47,9 +47,8 @@ const signin = async (req, res) => {
 
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '23h' });
   await User.findByIdAndUpdate(id, { token });
-  res.json({ token });
+  res.json({ token, user: email });
 };
-
 const getCurrent = async (req, res) => {
   const { name, email } = req.user;
 
@@ -60,7 +59,7 @@ const logout = async (req, res) => {
   const { _id } = req.user;
 
   await User.findByIdAndUpdate(_id, { token: '' });
-  res.status(204).json({ message: 'No Content' });
+  res.status(204);
 };
 
 module.exports = {
