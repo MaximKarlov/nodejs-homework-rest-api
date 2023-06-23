@@ -1,5 +1,12 @@
 const bcrypt = require('bcryptjs');
 
+const fs = require('fs/promises');
+const path = require('path');
+
+const gravatar = require('gravatar');
+
+const Jimp = require('jimp');
+
 const jwt = require('jsonwebtoken');
 
 const { SECRET_KEY } = process.env;
@@ -19,11 +26,15 @@ const signup = async (req, res) => {
 
   const hashPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword });
+  const userAvatar = gravatar.url(user, { s: '100', r: 'x', d: 'retro' }, true);
+
+  const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL: userAvatar });
 
   res.status(201).json({
-    name: newUser.name,
-    email: newUser.email,
+    user: {
+      email: newUser.email,
+      subscription: newUser.subscription,
+    },
   });
 };
 
@@ -36,10 +47,10 @@ const signin = async (req, res) => {
 
   const passwordCompare = await bcrypt.compare(password, user.password);
   if (!passwordCompare) {
-    throw HttpError(401);
+    throw HttpError(401, 'Email or password is wrong');
   }
 
-  const { _id: id } = user;
+  const { _id: id, subscription } = user;
 
   const payload = {
     id,
@@ -47,19 +58,40 @@ const signin = async (req, res) => {
 
   const token = jwt.sign(payload, SECRET_KEY, { expiresIn: '23h' });
   await User.findByIdAndUpdate(id, { token });
-  res.json({ token, user: email });
+  res.json({ token, user: { email, subscription } });
 };
-const getCurrent = async (req, res) => {
-  const { name, email } = req.user;
 
-  res.json({ name, email });
+const getCurrent = async (req, res) => {
+  const { name, email, subscription } = req.user;
+
+  res.json({ name, email, subscription });
 };
 
 const logout = async (req, res) => {
   const { _id } = req.user;
-
   await User.findByIdAndUpdate(_id, { token: '' });
-  res.status(204);
+  res.status(204).json();
+};
+
+const changeAvatar = async (req, res) => {
+  const { id } = req.user;
+  const { path: oldPath, filename } = req.file;
+
+  const userDir = path.resolve('public', 'avatars');
+  const newPath = path.join(userDir, filename);
+
+  Jimp.read(`${oldPath}`, (err, avatar) => {
+    if (err) {
+      throw err;
+    }
+    avatar.resize(250, 250).quality(100).write(`${newPath}`);
+  });
+
+  fs.unlink(oldPath);
+
+  await User.findByIdAndUpdate(id, { avatarURL: newPath });
+
+  res.status(200).json({ avatarURL: newPath });
 };
 
 module.exports = {
@@ -67,4 +99,5 @@ module.exports = {
   signin: ctrlWrapper(signin),
   getCurrent: ctrlWrapper(getCurrent),
   logout: ctrlWrapper(logout),
+  changeAvatar: ctrlWrapper(changeAvatar),
 };
