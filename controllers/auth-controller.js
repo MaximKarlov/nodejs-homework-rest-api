@@ -89,9 +89,11 @@ const changeAvatar = async (req, res) => {
 
   fs.unlink(oldPath);
 
-  await User.findByIdAndUpdate(id, { avatarURL: newPath });
+  const avatarURL = path.join('avatars', filename);
 
-  res.status(200).json({ avatarURL: newPath });
+  await User.findByIdAndUpdate(id, { avatarURL });
+
+  res.status(200).json({ avatarURL });
 };
 
 module.exports = {
