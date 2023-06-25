@@ -4,13 +4,12 @@ const path = require('path');
 const destination = path.resolve('tmp');
 
 const storage = multer.diskStorage({
-    destination,
-    filename: function (req, file, cb) {
-        const uniquePreffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-        const { originalname } = file;
-        const fileName = `${uniquePreffix}_${originalname}`;
-        cb(null, fileName);
-    },
+  destination,
+  filename: function (req, file, cb) {
+    const { _id } = req.user;
+    const uniquePreffix = _id + '_avatar.jpg';
+    cb(null, uniquePreffix);
+  },
 });
 
 const upload = multer({ storage });
