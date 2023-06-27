@@ -17,10 +17,14 @@ const transport = nodemailer.createTransport(nodemailerConfig);
 
 const sendEmail = async data => {
   const email = { ...data, from: EMAIL_UKRNET_NAME };
-  await transport.sendMail(email);
-  // transport.sendMail(email);
-  console.log(email);
-  console.log(EMAIL_UKRNET_NAME);
+  await transport
+    .sendMail(email)
+    .then(() => {
+      console.log('Sent mail successfully');
+    })
+    .catch(err => {
+      console.log(err.message);
+    });
   return true;
 };
 
