@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 
+const shortid = require('shortid');
 const fs = require('fs/promises');
 const path = require('path');
 
@@ -9,11 +10,11 @@ const Jimp = require('jimp');
 
 const jwt = require('jsonwebtoken');
 
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, BASE_URL } = process.env;
 
 const User = require('../models/user');
 
-const { HttpError } = require('../helpers');
+const { HttpError, sendEmail } = require('../helpers');
 
 const { ctrlWrapper } = require('../decorators');
 
@@ -26,9 +27,24 @@ const signup = async (req, res) => {
 
   const hashPassword = await bcrypt.hash(password, 10);
 
+  const verificationCode = shortid();
+
   const userAvatar = gravatar.url(user, { s: '100', r: 'x', d: 'retro' }, true);
 
-  const newUser = await User.create({ ...req.body, password: hashPassword, avatarURL: userAvatar });
+  const newUser = await User.create({
+    ...req.body,
+    password: hashPassword,
+    avatarURL: userAvatar,
+    verificationToken: verificationCode,
+  });
+
+  const verifyEmail = {
+    to: email,
+    subject: 'Verification email',
+    html: `<a target="_blank" href="${BASE_URL}/users/verify/${verificationCode}">Click to verificate email</a>`,
+  };
+
+  await sendEmail(verifyEmail);
 
   res.status(201).json({
     user: {
