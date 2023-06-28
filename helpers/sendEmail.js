@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 require('dotenv').config();
 
-const { EMAIL_UKRNET_NAME, EMAIL_UKRNET_PASSWORD } = process.env;
+const { EMAIL_HOST, EMAIL_PORT, EMAIL_UKRNET_NAME, EMAIL_UKRNET_PASSWORD } = process.env;
 
 const nodemailerConfig = {
-  host: 'smtp.ukr.net',
-  port: 465,
+  host: EMAIL_HOST,
+  port: EMAIL_PORT,
   secure: true,
   auth: {
     user: EMAIL_UKRNET_NAME,
@@ -25,7 +25,6 @@ const sendEmail = async data => {
     .catch(err => {
       console.log(err.message);
     });
-  return true;
 };
 
 module.exports = sendEmail;
