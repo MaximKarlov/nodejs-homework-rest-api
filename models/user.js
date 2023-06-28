@@ -5,10 +5,10 @@ const { handleMongooseError } = require('../helpers');
 const { emailRegexp } = require('../constants/user');
 
 const userSchema = new Schema(
-  {
-    name: {
-      type: String,
-    },
+    {
+        name: {
+            type: String,
+        },
     email: {
       type: String,
       match: emailRegexp,
